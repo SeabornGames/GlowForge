@@ -86,10 +86,14 @@ class Cell:
     GRID = OrderedDict()
     SPECIALS = OrderedDict()
 
-    def __init(self, c, x, y):
+    def __init__(self, c, x, y):
         self.c = c
         self.x = x
         self.y = y
+
+    def __repr__(self):
+        return '%s(%r, %r, %r)'%(self.__class__.__name__,
+                                 self.c, self.x, self.y)
 
     @classmethod
     def parse_file(cls, args):
@@ -111,13 +115,16 @@ class Cell:
                     cls.GRID[x, y] = Wall(c, x, y)
                 elif c in Special.characters:
                     cls.SPECIALS[x, y] = Special(c, x, y)
+        return args
 
     @classmethod
     def update(cls, grid):
         for v in cls.GRID.values():
             v.clean()
-        while cls.SPECIALS:
-            cls.SPECIALS.values()[0].clean(grid)
+        for k in list(cls.SPECIALS.keys()):
+            v = cls.SPECIALS.get(k)
+            if v is not None: # specials are popped out with other specials
+                v.clean(grid)
         for v in cls.GRID.values():
             row = list(grid[v.y])
             row[v.x] = v.c
@@ -179,17 +186,18 @@ class Special(Cell):
         word = ''
         i = l = r = 0
         for i in range(100):
-            _next = self.GRID.get((self.x+i, self.y), None)
+            _next = self.SPECIALS.get((self.x+i, self.y), None)
             if isinstance(_next, Special):
-                self.GRID.pop((self.x+i, self.y))
+                self.SPECIALS.pop((self.x+i, self.y))
                 word += _next.c
-            elif _next is None and word[-1] != ' ':
+            elif (_next is None and (self.x+i, self.y) not in self.GRID and
+                      word[-1] != ' '):
                 word += ' '
         for r in range(self.x+i, self.x+i+400):
-            if self.GRID.get((r, self.y), None):
+            if self.SPECIALS.get((r, self.y), None):
                 break
         for l in range(self.x, self.x-400):
-            if l and self.GRID.get((l, self.y), None):
+            if l and self.SPECIALS.get((l, self.y), None):
                 break
         word = self.verticle_buffer + word.strip() + self.verticle_buffer
         ljust = (r-l - len(word) // 2)
@@ -206,58 +214,57 @@ class Special(Cell):
 
 
 class Door(Cell):
-    horizontal = '⏺',
-    internal = '⏭',
-    left_intersect = '⏩',
-    right_intersect = '⏪',
-    top_intersect = '⏬',
-    bottom_intersect = '⏫',
-    vertical = '⏹',
+    horizontal = '⏺'
+    internal = '⏭'
+    left_intersect = '⏩'
+    right_intersect = '⏪'
+    top_intersect = '⏬'
+    bottom_intersect = '⏫'
+    vertical = '⏹'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical + vertical)
 
 
 class Virtual(Cell):
-    horizontal = '┈',
-    internal = '⟊',
-    left_intersect = '╟',
-    right_intersect = '╢',
-    top_intersect = '╤',
-    bottom_intersect = '⟂',
-    vertical = '┆',
+    horizontal = '┈'
+    internal = '⟊'
+    left_intersect = '╟'
+    right_intersect = '╢'
+    top_intersect = '╤'
+    bottom_intersect = '⟂'
+    vertical = '┆'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical)
 
 
 class Window(Cell):
-    horizontal = '─',
-    internal = '┼',
-    left_intersect = '╟',
-    right_intersect = '╢',
-    top_intersect = '╤',
-    bottom_intersect = '╧',
-    vertical = '│',
+    horizontal = '─'
+    internal = '┼'
+    left_intersect = '╟'
+    right_intersect = '╢'
+    top_intersect = '╤'
+    bottom_intersect = '╧'
+    vertical = '│'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical)
 
 
 class Wall(Cell):
-    horizontal = '═',
-    internal = '╬',
-    top_left_corner = '╒',
-    top_intersect = '╦',
-    top_right_corner = '╕',
-    bottom_left_corner = '╚',
-    bottom_intersect = '╩',
-    bottom_right_corner = '╝',
-    left_intersect = '╠',
-    vertical = '║',
-    right_intersect = '╣',
+    horizontal = '═'
+    internal = '╬'
+    top_left_corner = '╒'
+    top_intersect = '╦'
+    top_right_corner = '╕'
+    bottom_left_corner = '╚'
+    bottom_intersect = '╩'
+    bottom_right_corner = '╝'
+    left_intersect = '╠'
+    vertical = '║'
+    right_intersect = '╣'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical +
                   top_left_corner + top_right_corner + bottom_left_corner +
                   bottom_right_corner)
-
 
 
 if __name__ == '__main__':
