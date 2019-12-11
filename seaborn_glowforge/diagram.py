@@ -136,10 +136,10 @@ class Cell:
             v = cls.SPECIALS.get(k)
             if v is not None:  # specials are popped out with other specials
                 v.clean(grid)
-        # for v in cls.GRID.values():
-        #     row = list(grid[v.y])
-        #     row[v.x] = v.c
-        #     grid[v.y] = ''.join(row)
+        for v in cls.GRID.values():
+            row = list(grid[v.y])
+            row[v.x] = v.c
+            grid[v.y] = ''.join(row)
 
     def clean(self):
         if (self.x, self.y + 1) in self.GRID:
@@ -192,11 +192,11 @@ class Special(Cell):
     characters = abc + abc.upper() + '0123456789[]_-'
     horizontal_buffer = ' '
     verticle_buffer = ' '
+    buffer_size = 2
 
     def clean(self, grid):
         word = ''
         i = l = r = 0
-        row = grid[self.y]
         for i in range(100):
             _next = self.SPECIALS.get((self.x + i, self.y), None)
             if isinstance(_next, Special):
@@ -207,23 +207,23 @@ class Special(Cell):
                 word += ' '
             else:
                 break
-        for r in range(self.x + i, min(len(row), self.x + i + 400)):
+        for r in range(self.x + i, min(len(grid[0]), self.x + i + 400)):
             if self.GRID.get((r, self.y), None):
                 break
         for l in range(self.x, max(-1, self.x - 400), -1):
             if l and self.GRID.get((l, self.y), None):
                 break
-        word = self.verticle_buffer + word.strip() + self.verticle_buffer
+        word = (self.verticle_buffer * self.buffer_size + word.strip() +
+                self.verticle_buffer * self.buffer_size)
         ljust = (r - l - len(word)) // 2
-        grid[self.y] = row[:l + ljust] + word + row[l+ljust+len(word):]
-        # add buffer around word
-        word = self.horizontal_buffer * len(word)
-        if self.y != 0:
-            row = grid[self.y - 1]
-            grid[self.y - 1] = row[:l + ljust] + word + row[l+ljust+len(word):]
-        if self.y != len(grid):
-            row = grid[self.y + 1]
-            grid[self.y + 1] = row[:l + ljust] + word + row[l+ljust+len(word):]
+        indexes = [self.y]
+        for r in range(1, self.buffer_size + 1):
+            indexes += [self.y+r, self.y-r]
+        for r in indexes:
+            if 0 <= r < len(grid):
+                row = grid[r]
+                grid[r] = row[:l + ljust] + word + row[l+ljust+len(word):]
+                word = self.horizontal_buffer * len(word)
 
 
 class Door(Cell):
