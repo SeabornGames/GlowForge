@@ -27,12 +27,12 @@ def main(cli_args=sys.argv[1:]):
 
 def create_diagram(args):
     grid = []
+    odd = ''
+    for w in range(args.width):
+        odd += (args.blank * 4) if w % 2 else (args.checker * 4)
+    even = odd[-4:] + odd[:-4]
     for i in range(args.height):
-        if i % 2:
-            row = (args.blank * 4 + args.checker * 4) * (args.width // 2)
-        else:
-            row = (args.checker * 4 + args.blank * 4) * (args.width // 2)
-        grid += [row, row]
+        grid += [odd, odd] if i % 2 else [even, even]
     return grid
 
 
@@ -40,9 +40,9 @@ def add_header(grid):
     width = len(grid[0]) // 4
     header = [' ' * 5] * 3
     for w in range(width):
-        header[0] += str(w//10) + str(w//10) + str(w//10) + str(w//10)
+        header[0] += str(w // 10) + str(w // 10) + str(w // 10) + str(w // 10)
     for w in range(width):
-        header[1] += str(w%10) + str(w%10) + str(w%10) + str(w%10)
+        header[1] += str(w % 10) + str(w % 10) + str(w % 10) + str(w % 10)
     header[2] += ' ¼½¾' * width
     for i, row in enumerate(grid):
         grid[i] = str(i // 2).rjust(4, ' ') + [' ', '½'][i % 2] + grid[i]
@@ -107,10 +107,15 @@ class Cell:
             grid = [row[5:] for row in grid[3:]]
         if args.height is None:
             args.height = len(grid) // 2
+        else:
+            grid = grid[:args.height * 2]
         if args.width is None:
             args.width = len(grid[0]) // 4
-        for y, row in enumerate(grid[:args.height*2]):
-            for x, c in enumerate(row[:args.width*4]):
+        else:
+            grid = [g[:args.width * 4] for g in grid]
+
+        for y, row in enumerate(grid):
+            for x, c in enumerate(row):
                 if c == args.blank or c == args.checker:
                     pass
                 elif c in Door.characters:
@@ -154,10 +159,10 @@ class Cell:
                     if (self.x + 1, self.y) in self.GRID:
                         self.c = self.bottom_intersect
                     else:  # not right
-                        self.c = getattr(self, 'bottom_right_corner', self.c)
+                        self.c = getattr(self, 'topright_corner', self.c)
                 else:  # not left
                     if (self.x + 1, self.y) in self.GRID:
-                        self.c = getattr(self, 'bottom_left_corner', self.c)
+                        self.c = getattr(self, 'top_left_corner', self.c)
                     else:  # not right
                         pass
         else:  # not above
@@ -166,10 +171,10 @@ class Cell:
                     if (self.x + 1, self.y) in self.GRID:
                         self.c = self.top_intersect
                     else:  # not right
-                        self.c = getattr(self, 'top_right_corner', self.c)
+                        self.c = getattr(self, 'bottom_right_corner', self.c)
                 else:  # not left
                     if (self.x + 1, self.y) in self.GRID:
-                        self.c = getattr(self, 'top_left_corner', self.c)
+                        self.c = getattr(self, 'bottom_left_corner', self.c)
                     else:  # not right or left
                         pass
             else:  # not below
