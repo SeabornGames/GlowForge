@@ -22,45 +22,10 @@ windows, and doors will be made with -.  It is assuming each character is 4" by
 4".
 
 https://www.fileformat.info/info/charset/UTF-8/list.htm?start=8192
-ຘ
-ℿ
-ᄑ
-ᄏ
-ᄐ
-ᄓ
-ᆩ
-፧
-፨
-።
-፠
-ᐧ
-ᐩ
-Ⅲ
-ᐱ
-ᐳ
-ᐯ
-ᐸ
-←
-↑
-→
-↓
-↖
-↗
-↘
-↙
-⇐
-⏎
-
-⏹
-⏸
-⏺
-⏩
-⏪
-⏫
-⏬
-⏭
-⏮
-⏯
+ຘℿᄑᄏᄐᄓᆩ፧፨።፠ᐧᐩⅢᐱᐳᐯᐸ←↑→↓↖↗↘↙⇐⏎
+⏹⏸⏺⏩⏪⏫⏬⏭⏮⏯
+█ ▓  ▒      ░   ▢   ▦       ▧   ⿴
+﹋﹏
 
 Tops:
     ╔   ╒    ═   ╤   ╕ ╗
@@ -76,9 +41,6 @@ Right
 
 Bottom
     ╚ ╘ ╙  ═   ╧  ╩  ╛  ╝  ╜
-
-█ ▓  ▒      ░   ▢   ▦       ▧   ⿴
-
 
 Creating a Diagram File
 -----------------------
