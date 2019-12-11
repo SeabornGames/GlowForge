@@ -27,10 +27,10 @@ def main(cli_args=sys.argv[1:]):
 
 def create_diagram(args):
     grid = []
-    odd = ''
+    odd = even = ''
     for w in range(args.width):
         odd += (args.blank * 4) if w % 2 else (args.checker * 4)
-    even = odd[-4:] + odd[:-4]
+        even += (args.checker * 4) if w % 2 else (args.blank * 4)
     for i in range(args.height):
         grid += [odd, odd] if i % 2 else [even, even]
     return grid
