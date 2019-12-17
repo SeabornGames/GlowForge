@@ -159,7 +159,7 @@ class Cell:
                     if (self.x + 1, self.y) in self.GRID:
                         self.c = self.bottom_intersect
                     else:  # not right
-                        self.c = getattr(self, 'topright_corner', self.c)
+                        self.c = getattr(self, 'top_right_corner', self.c)
                 else:  # not left
                     if (self.x + 1, self.y) in self.GRID:
                         self.c = getattr(self, 'top_left_corner', self.c)
