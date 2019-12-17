@@ -237,13 +237,13 @@ class Special(Cell):
 
 
 class Door(Cell):
-    horizontal = '⏺'
-    internal = '⏭'
-    left_intersect = '⏩'
-    right_intersect = '⏪'
-    top_intersect = '⏬'
-    bottom_intersect = '⏫'
-    vertical = '⏹'
+    horizontal = '█'
+    internal = '█'
+    left_intersect = '█'
+    right_intersect = '█'
+    top_intersect = '█'
+    bottom_intersect = '█'
+    vertical = '█'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical + vertical)
 
