@@ -35,7 +35,10 @@ def create_diagram(args):
         else:
             even += (args.checker * 4) if w % 2 else (args.blank * 4)
     for i in range(args.height):
-        grid += [odd, odd] if i % 2 else [even, even]
+        if i % 10 == 9:
+            grid += [odd.replace(args.checker, args.ten_checker)]*2
+        else:
+            grid += [odd, odd] if i % 2 else [even, even]
     return grid
 
 
@@ -64,7 +67,7 @@ def parse_args(cli_args):
                         help='character to use to represent blank space')
     parser.add_argument('--checker', default='░',
                         help='character of the oscillating foot spaces')
-    parser.add_argument('--ten-checker', default='▓',
+    parser.add_argument('--ten-checker', default='▒',
                         help='character of the oscillating 10 foot spaces')
     parser.add_argument('--no-header', action='store_true', default=False,
                         help='skip putting the header in the file')
