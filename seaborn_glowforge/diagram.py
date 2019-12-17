@@ -132,6 +132,8 @@ class Cell:
                     cls.GRID[x, y] = Window(c, x, y)
                 elif c in Wall.characters:
                     cls.GRID[x, y] = Wall(c, x, y)
+                elif c in Virtual.characters:
+                    cls.GRID[x, y] = Virtual(c, x, y)
                 elif c in Special.characters:
                     cls.SPECIALS[x, y] = Special(c, x, y)
         return args
