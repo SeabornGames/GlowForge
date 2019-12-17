@@ -30,7 +30,10 @@ def create_diagram(args):
     odd = even = ''
     for w in range(args.width):
         odd += (args.blank * 4) if w % 2 else (args.checker * 4)
-        even += (args.checker * 4) if w % 2 else (args.blank * 4)
+        if w%10 == 9:
+            even += args.ten_checker * 4
+        else:
+            even += (args.checker * 4) if w % 2 else (args.blank * 4)
     for i in range(args.height):
         grid += [odd, odd] if i % 2 else [even, even]
     return grid
@@ -60,7 +63,9 @@ def parse_args(cli_args):
     parser.add_argument('--blank', default=' ',
                         help='character to use to represent blank space')
     parser.add_argument('--checker', default='░',
-                        help='character of the oscilating foot spaces')
+                        help='character of the oscillating foot spaces')
+    parser.add_argument('--ten-checker', default='▓',
+                        help='character of the oscillating 10 foot spaces')
     parser.add_argument('--no-header', action='store_true', default=False,
                         help='skip putting the header in the file')
     parser.add_argument('--backup-file', '-b', default=None,
@@ -116,7 +121,7 @@ class Cell:
 
         for y, row in enumerate(grid):
             for x, c in enumerate(row):
-                if c == args.blank or c == args.checker:
+                if c in [args.blank, args.checker, args.ten_checker]:
                     pass
                 elif c in Door.characters:
                     cls.GRID[x, y] = Door(c, x, y)
@@ -157,7 +162,7 @@ class Cell:
             else:  # not below
                 if (self.x - 1, self.y) in self.GRID:
                     if (self.x + 1, self.y) in self.GRID:
-                        self.c = self.bottom_intersect
+                        self.c = self.top_intersect
                     else:  # not right
                         self.c = getattr(self, 'top_right_corner', self.c)
                 else:  # not left
@@ -169,7 +174,7 @@ class Cell:
             if (self.x, self.y - 1) in self.GRID:
                 if (self.x - 1, self.y) in self.GRID:
                     if (self.x + 1, self.y) in self.GRID:
-                        self.c = self.top_intersect
+                        self.c = self.bottom_intersect
                     else:  # not right
                         self.c = getattr(self, 'bottom_right_corner', self.c)
                 else:  # not left
