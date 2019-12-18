@@ -256,8 +256,14 @@ class Virtual(Cell):
     top_intersect = '╤'
     bottom_intersect = '⟂'
     vertical = '┆'
+    top_right_corner = '┐'
+    top_left_corner = '┌'
+    bottom_right_corner = '┘'
+    bottom_left_corner = '└'
     characters = (horizontal + internal + left_intersect + right_intersect +
-                  top_intersect + bottom_intersect + vertical)
+                  top_intersect + bottom_intersect + vertical +
+                  top_right_corner + top_left_corner + bottom_left_corner +
+                  bottom_right_corner)
 
 
 class Window(Cell):
