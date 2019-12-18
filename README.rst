@@ -24,7 +24,7 @@ windows, and doors will be made with -.  It is assuming each character is 4" by
 https://www.fileformat.info/info/charset/UTF-8/list.htm?start=8192
 ຘℿᄑᄏᄐᄓᆩ፧፨።፠ᐧᐩⅢᐱᐳᐯᐸ←↑→↓↖↗↘↙⇐⏎
 ⏹⏸⏺⏩⏪⏫⏬⏭⏮⏯
-█ ▓  ▒      ░   ▢   ▦       ▧   ⿴
+█ ▓  ▒      ░   ▢   ▦       ▧   ⿴ ▬
 ﹋﹏
 
 Tops:
