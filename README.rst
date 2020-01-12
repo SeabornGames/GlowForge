@@ -6,6 +6,7 @@ cut it out and build a model of the house.
 
 Install library
 ===============
+
 Ensure you have python 3.6 or better.
 
 To create a private virtual environment use the following command:
@@ -42,6 +43,26 @@ Right
 Bottom
     ╚ ╘ ╙  ═   ╧  ╩  ╛  ╝  ╜
 
+
 Creating a Diagram File
 -----------------------
-Use the ``diagram`` command to create a blank diagrm file.
+
+Use the ``diagram`` command to create a blank diagram file, or to clean up
+an existing diagram.
+
+
+Creating Glowforge Walls
+------------------------
+
+The following two files are needed to create the walls for glowforge:
+    1. diagram file from above
+    2. wall file.
+
+The wall file is a csv table (or any file format that seaborn_table can read.
+If the wall file is not provided then the glowforge program will create it based
+on the room names in the diagram file.
+
+
+
+
+

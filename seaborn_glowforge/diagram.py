@@ -118,7 +118,7 @@ class Cell:
         else:
             grid = grid[:args.height * 2]
         if args.width is None:
-            args.width = len(grid[0]) // 4
+            args.width = max(*[len(g) for g in grid]) // 4
         else:
             grid = [g[:args.width * 4] for g in grid]
 

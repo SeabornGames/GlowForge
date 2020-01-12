@@ -18,6 +18,7 @@ setup(
     author_email='Python@BenChristenson.com',
     url='https://github.com/SeabornGames/SeabornGlowforge',
     install_requires=[
+        'seaborn_table'
     ],
     extras_require={
     },
