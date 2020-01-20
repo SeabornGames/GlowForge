@@ -121,8 +121,8 @@ class Diagram:
                     self.layout[x, y] = Virtual(c, x, y)
                 elif c in RoomName.characters:
                     self.names[x, y] = RoomName(c, x, y)
-                elif c in Name.characters:
-                    self.names[x, y] = Name(c, x, y)
+                elif c in ObjectName.characters:
+                    self.names[x, y] = ObjectName(c, x, y)
         return grid
 
     def update(self):
@@ -220,29 +220,33 @@ class RoomName(Cell):
     vertical_buffer = ' '
     buffer_size = 2
 
-    def clean(self, diagram):
-        word = ''
-        i = l = r = 0
+    def combine_characters_to_a_name(self, diagram):
+        name = ''
         for i in range(100):
             _next = diagram.names.get((self.x + i, self.y), None)
             if isinstance(_next, RoomName):
                 diagram.names.pop((self.x + i, self.y))
-                word += _next.c
+                name += _next.c
             elif (_next is None and (self.x + i, self.y) not in diagram.layout
-                  and word[-1] != ' '):
-                word += ' '
+                  and name[-1] != ' '):
+                name += ' '
             else:
                 break
+        return name.strip()
 
+    def clean(self, diagram):
+        name = self.combine_characters_to_a_name(diagram)
+        i = len(name)
+        l = r = 0
         for r in range(self.x + i, min(diagram.width * 4, self.x + i + 400)):
             if diagram.layout.get((r, self.y), None):
                 break
         for l in range(self.x, max(-1, self.x - 400), -1):
             if l and diagram.layout.get((l, self.y), None):
                 break
-        word = (self.vertical_buffer * self.buffer_size + word.strip() +
+        name = (self.vertical_buffer * self.buffer_size + name.strip() +
                 self.vertical_buffer * self.buffer_size)
-        _ljust = (r - l - len(word)) // 2 + 1
+        _ljust = (r - l - len(name)) // 2 + 1
         indexes = [self.y]
         for r in range(1, self.buffer_size + 1):
             indexes += [self.y + r, self.y - r]
@@ -250,12 +254,12 @@ class RoomName(Cell):
             if 0 <= r < len(diagram.grid):
                 row = diagram.grid[r]
                 left_side = row[:l + _ljust]
-                right_side = row[l + _ljust + len(word):]
-                diagram.grid[r] = left_side + word + right_side
-                word = self.horizontal_buffer * len(word)
+                right_side = row[l + _ljust + len(name):]
+                diagram.grid[r] = left_side + name + right_side
+                name = self.horizontal_buffer * len(name)
 
 
-class Name(RoomName):
+class ObjectName(RoomName):
     characters = 'abcdefghijklmnopqrstuvwxyz'
 
 
