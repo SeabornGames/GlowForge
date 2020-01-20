@@ -13,6 +13,9 @@ def main(cli_args=sys.argv[1:]):
 
     diagram = Diagram(**vars(args))
 
+    if args.remove_objects:
+        diagram.remove_objects()
+
     if args.input_file:
         for highlight in (args.highlight_room or []):
             for room in diagram.rooms + diagram.objects:
@@ -60,7 +63,7 @@ def parse_args(cli_args):
     parser.add_argument('--highlight-room', default=None, nargs='+',
                         help='Highlights a room with this name to test room'
                              ' dimensions for debugging')
-    parser.add_argument('--remove-objects', default=None,
+    parser.add_argument('--remove-objects', default=None, action='store_true',
                         help='Remove objects and boundaries for debugging')
     args = parser.parse_args(cli_args)
     if args.input_file and args.output_file is None:
@@ -79,7 +82,6 @@ class Diagram:
     def __init__(self, width, height, checker, ten_checker, blank, input_file,
                  **kwargs):
         self.layout = OrderedDict()
-        self.room_layout = None
         self.name_characters = OrderedDict()
         self.rooms = []
         self.objects = []
@@ -129,24 +131,46 @@ class Diagram:
                     pass
                 elif c in Door.characters:
                     self.layout[x, y] = Door(c, x, y)
+                elif c in Virtual.characters:
+                    self.layout[x, y] = Virtual(c, x, y)
                 elif c in Window.characters:
                     self.layout[x, y] = Window(c, x, y)
                 elif c in Wall.characters:
                     self.layout[x, y] = Wall(c, x, y)
-                elif c in Virtual.characters:
-                    self.layout[x, y] = Virtual(c, x, y)
                 elif c in RoomName.characters:
                     self.name_characters[x, y] = RoomName(c, x, y)
                 elif c in ObjectName.characters:
                     self.name_characters[x, y] = ObjectName(c, x, y)
 
         for v in self.layout.values():
-            v.clean(self)
+            v.clean(diagram=self)
         for k in list(self.name_characters.keys()):
             v = self.name_characters.get(k)
             if v is not None:  # character was popped out with other names
-                v.clean(self)
+                v.clean(diagram=self)
         return self.create_grid()
+
+    def remove_objects(self):
+        self.layout = self.create_room_only_layout()
+        self.objects.clear()
+        for v in self.layout.values():
+            v.clean(self)
+
+    def create_room_only_layout(self):
+        room_layout = OrderedDict()
+        removed_walls = []
+        for object in self.objects:
+            if not object.walls:
+                object.calc_room_dimensions(self.layout, self.width * 4,
+                                            self.height * 2)
+            for location in object.walls:
+                wall = self.layout.get(location)
+                if isinstance(wall, Virtual) and wall not in removed_walls:
+                    removed_walls.append(wall)
+        for k, v in self.layout.items():
+            if v not in removed_walls:
+                room_layout[k] = v
+        return room_layout
 
     def add_names_to_grid(self):
         for room in self.rooms:
@@ -157,7 +181,7 @@ class Diagram:
     def add_layout_to_grid(self):
         for v in self.layout.values():
             row = self.grid[v.y]
-            self.grid[v.y] = row[:v.x] + v.c + row[v.x+1:]
+            self.grid[v.y] = row[:v.x] + v.c + row[v.x + 1:]
 
     def add_header(self):
         header = [' ' * 5] * 3
@@ -341,11 +365,14 @@ class Room:
         self.walls = []
 
     def calc_room_dimensions(self, layout, max_x, max_y):
+        self.cells = []
+        self.walls = []
         self.cells.append((self.x, self.y))
         i = 0
         while i < len(self.cells):
             x, y = self.cells[i]
-            for neighbor in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
+            for neighbor in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1),
+                             (x - 1, y-1),(x+1, y+1), (x+1, y-1), (x-1, y+1)]:
                 if not (0 <= neighbor[0] < max_x):
                     continue
                 if not (0 <= neighbor[1] + y < max_y):
@@ -383,10 +410,10 @@ class Room:
         _ljust = (r - l - len(name)) // 2 + 1
         indexes = [self.y]
         for r in range(1, self.buffer_size + 1):
-            if (self.x, self.y+r) in self.cells:
+            if (self.x, self.y + r) in self.cells:
                 indexes.append(self.y + r)
-            if (self.x, self.y-r) in self.cells:
-                indexes.append(self.y -r)
+            if (self.x, self.y - r) in self.cells:
+                indexes.append(self.y - r)
         for r in indexes:
             if 0 <= r < len(diagram.grid):
                 row = diagram.grid[r]
