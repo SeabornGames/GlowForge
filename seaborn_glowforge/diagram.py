@@ -10,49 +10,16 @@ def main(cli_args=sys.argv[1:]):
     if args.backup_file and args.backup_file != '-':
         if os.path.exists(args.output_file):
             copyfile(args.output_file, args.backup_file)
-    if args.input_file and os.path.exists(args.input_file):
-        args = Cell.parse_file(args)
-    grid = create_diagram(args)
-    Cell.update(grid)
 
+    diagram = Diagram(**vars(args))
     if not args.no_header:
-        grid = add_header(grid)
+        diagram.add_header()
 
     if args.output_file and args.output_file != '-':
         with open(args.output_file, 'w') as fn:
-            fn.write('\n'.join(grid))
+            fn.write(str(diagram))
     else:
-        print('\n'.join(grid))
-
-
-def create_diagram(args):
-    grid = []
-    odd = even = ''
-    for w in range(args.width):
-        odd += (args.blank * 4) if w % 2 else (args.checker * 4)
-        if w%10 == 9:
-            even += args.ten_checker * 4
-        else:
-            even += (args.checker * 4) if w % 2 else (args.blank * 4)
-    for i in range(args.height):
-        if i % 10 == 9:
-            grid += [odd.replace(args.checker, args.ten_checker)]*2
-        else:
-            grid += [odd, odd] if i % 2 else [even, even]
-    return grid
-
-
-def add_header(grid):
-    width = len(grid[0]) // 4
-    header = [' ' * 5] * 3
-    for w in range(width):
-        header[0] += str(w // 10) + str(w // 10) + str(w // 10) + str(w // 10)
-    for w in range(width):
-        header[1] += str(w % 10) + str(w % 10) + str(w % 10) + str(w % 10)
-    header[2] += ' ¼½¾' * width
-    for i, row in enumerate(grid):
-        grid[i] = str(i // 2).rjust(4, ' ') + [' ', '½'][i % 2] + grid[i]
-    return header + grid
+        print(diagram)
 
 
 def parse_args(cli_args):
@@ -94,10 +61,101 @@ def parse_args(cli_args):
     return args
 
 
-class Cell:
-    GRID = OrderedDict()
-    SPECIALS = OrderedDict()
+class Diagram:
+    def __init__(self, width, height, checker, ten_checker, blank, input_file,
+                 **kwargs):
+        self.layout = OrderedDict()
+        self.names = OrderedDict()
+        self.width = width
+        self.height = height
+        self.checker = checker
+        self.ten_checker = ten_checker
+        self.blank = blank
+        if input_file:
+            self.grid = self.parse_file(input_file)
+            self.update()
+        else:
+            self.grid = self.create_grid()
 
+    def create_grid(self):
+        grid = []
+        odd = even = ''
+        for w in range(self.width):
+            odd += (self.blank * 4) if w % 2 else (self.checker * 4)
+            if w % 10 == 9:
+                even += self.ten_checker * 4
+            else:
+                even += (self.checker * 4) if w % 2 else (self.blank * 4)
+        for i in range(self.height):
+            if i % 10 == 9:
+                grid += [odd.replace(self.checker, self.ten_checker)] * 2
+            else:
+                grid += [odd, odd] if i % 2 else [even, even]
+        return grid
+
+    def parse_file(self, input_file):
+        with open(input_file, 'r') as fn:
+            grid = fn.read().split('\n')
+        if grid[0].startswith('     000000'):  # then strip header:
+            grid = [row[5:] for row in grid[3:]]
+        if self.height is None:
+            self.height = len(grid) // 2
+        else:
+            grid = grid[:self.height * 2]
+        if self.width is None:
+            self.width = max(*[len(g) for g in grid]) // 4
+        else:
+            grid = [g[:self.width * 4] for g in grid]
+
+        for y, row in enumerate(grid):
+            for x, c in enumerate(row):
+                if c in [self.blank, self.checker, self.ten_checker]:
+                    pass
+                elif c in Door.characters:
+                    self.layout[x, y] = Door(c, x, y)
+                elif c in Window.characters:
+                    self.layout[x, y] = Window(c, x, y)
+                elif c in Wall.characters:
+                    self.layout[x, y] = Wall(c, x, y)
+                elif c in Virtual.characters:
+                    self.layout[x, y] = Virtual(c, x, y)
+                elif c in RoomName.characters:
+                    self.names[x, y] = RoomName(c, x, y)
+                elif c in Name.characters:
+                    self.names[x, y] = Name(c, x, y)
+        return grid
+
+    def update(self):
+        for v in self.layout.values():
+            v.clean(self)
+        for k in list(self.names.keys()):
+            v = self.names.get(k)
+            if v is not None:  # names are popped out with other names
+                v.clean(self)
+        for v in self.layout.values():
+            row = list(self.grid[v.y])
+            row[v.x] = v.c
+            self.grid[v.y] = ''.join(row)
+
+    def add_header(self):
+        header = [' ' * 5] * 3
+        for w in range(self.width):
+            header[0] += str(w // 10)[-1] + str(w // 10)[-1] + str(w // 10)[
+                -1] + str(
+                w // 10)[-1]
+        for w in range(self.width):
+            header[1] += str(w % 10) + str(w % 10) + str(w % 10) + str(w % 10)
+        header[2] += ' ¼½¾' * self.width
+        for i, row in enumerate(self.grid):
+            self.grid[i] = str(i // 2).rjust(4, ' ') + [' ', '½'][i % 2] + \
+                           self.grid[i]
+        self.grid = header + self.grid
+
+    def __str__(self):
+        return '\n'.join(self.grid)
+
+
+class Cell:
     def __init__(self, c, x, y):
         self.c = c
         self.x = x
@@ -107,89 +165,48 @@ class Cell:
         return '%s(%r, %r, %r)' % (self.__class__.__name__,
                                    self.c, self.x, self.y)
 
-    @classmethod
-    def parse_file(cls, args):
-        with open(args.input_file, 'r') as fn:
-            grid = fn.read().split('\n')
-        if grid[0].startswith('     000000'):  # then strip header:
-            grid = [row[5:] for row in grid[3:]]
-        if args.height is None:
-            args.height = len(grid) // 2
-        else:
-            grid = grid[:args.height * 2]
-        if args.width is None:
-            args.width = max(*[len(g) for g in grid]) // 4
-        else:
-            grid = [g[:args.width * 4] for g in grid]
+    def __str__(self):
+        return self.c
 
-        for y, row in enumerate(grid):
-            for x, c in enumerate(row):
-                if c in [args.blank, args.checker, args.ten_checker]:
-                    pass
-                elif c in Door.characters:
-                    cls.GRID[x, y] = Door(c, x, y)
-                elif c in Window.characters:
-                    cls.GRID[x, y] = Window(c, x, y)
-                elif c in Wall.characters:
-                    cls.GRID[x, y] = Wall(c, x, y)
-                elif c in Virtual.characters:
-                    cls.GRID[x, y] = Virtual(c, x, y)
-                elif c in Special.characters:
-                    cls.SPECIALS[x, y] = Special(c, x, y)
-        return args
-
-    @classmethod
-    def update(cls, grid):
-        for v in cls.GRID.values():
-            v.clean()
-        for k in list(cls.SPECIALS.keys()):
-            v = cls.SPECIALS.get(k)
-            if v is not None:  # specials are popped out with other specials
-                v.clean(grid)
-        for v in cls.GRID.values():
-            row = list(grid[v.y])
-            row[v.x] = v.c
-            grid[v.y] = ''.join(row)
-
-    def clean(self):
-        if (self.x, self.y + 1) in self.GRID:
-            if (self.x, self.y - 1) in self.GRID:
-                if (self.x - 1, self.y) in self.GRID:
-                    if (self.x + 1, self.y) in self.GRID:
+    def clean(self, diagram):
+        if (self.x, self.y + 1) in diagram.layout:
+            if (self.x, self.y - 1) in diagram.layout:
+                if (self.x - 1, self.y) in diagram.layout:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = self.internal
                     else:  # not right
                         self.c = self.right_intersect
                 else:  # not left
-                    if (self.x + 1, self.y) in self.GRID:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = self.left_intersect
                     else:  # not right or left
                         self.c = self.vertical
             else:  # not below
-                if (self.x - 1, self.y) in self.GRID:
-                    if (self.x + 1, self.y) in self.GRID:
+                if (self.x - 1, self.y) in diagram.layout:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = self.top_intersect
                     else:  # not right
                         self.c = getattr(self, 'top_right_corner', self.c)
                 else:  # not left
-                    if (self.x + 1, self.y) in self.GRID:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = getattr(self, 'top_left_corner', self.c)
                     else:  # not right
                         pass
         else:  # not above
-            if (self.x, self.y - 1) in self.GRID:
-                if (self.x - 1, self.y) in self.GRID:
-                    if (self.x + 1, self.y) in self.GRID:
+            if (self.x, self.y - 1) in diagram.layout:
+                if (self.x - 1, self.y) in diagram.layout:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = self.bottom_intersect
                     else:  # not right
                         self.c = getattr(self, 'bottom_right_corner', self.c)
                 else:  # not left
-                    if (self.x + 1, self.y) in self.GRID:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = getattr(self, 'bottom_left_corner', self.c)
                     else:  # not right or left
                         pass
             else:  # not below
-                if (self.x - 1, self.y) in self.GRID:
-                    if (self.x + 1, self.y) in self.GRID:
+                if (self.x - 1, self.y) in diagram.layout:
+                    if (self.x + 1, self.y) in diagram.layout:
                         self.c = self.horizontal
                     else:  # not right
                         pass
@@ -197,43 +214,49 @@ class Cell:
                     pass
 
 
-class Special(Cell):
-    abc = 'abcdefghijklmnopqrstuvwxyz'
-    characters = abc + abc.upper() + '0123456789[]_-'
+class RoomName(Cell):
+    characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[]_-'
     horizontal_buffer = ' '
-    verticle_buffer = ' '
+    vertical_buffer = ' '
     buffer_size = 2
 
-    def clean(self, grid):
+    def clean(self, diagram):
         word = ''
         i = l = r = 0
         for i in range(100):
-            _next = self.SPECIALS.get((self.x + i, self.y), None)
-            if isinstance(_next, Special):
-                self.SPECIALS.pop((self.x + i, self.y))
+            _next = diagram.names.get((self.x + i, self.y), None)
+            if isinstance(_next, RoomName):
+                diagram.names.pop((self.x + i, self.y))
                 word += _next.c
-            elif (_next is None and
-                    (self.x + i, self.y) not in self.GRID and word[-1] != ' '):
+            elif (_next is None and (self.x + i, self.y) not in diagram.layout
+                  and word[-1] != ' '):
                 word += ' '
             else:
                 break
-        for r in range(self.x + i, min(len(grid[0]), self.x + i + 400)):
-            if self.GRID.get((r, self.y), None):
+
+        for r in range(self.x + i, min(diagram.width * 4, self.x + i + 400)):
+            if diagram.layout.get((r, self.y), None):
                 break
         for l in range(self.x, max(-1, self.x - 400), -1):
-            if l and self.GRID.get((l, self.y), None):
+            if l and diagram.layout.get((l, self.y), None):
                 break
-        word = (self.verticle_buffer * self.buffer_size + word.strip() +
-                self.verticle_buffer * self.buffer_size)
-        ljust = (r - l - len(word)) // 2 + 1
+        word = (self.vertical_buffer * self.buffer_size + word.strip() +
+                self.vertical_buffer * self.buffer_size)
+        _ljust = (r - l - len(word)) // 2 + 1
         indexes = [self.y]
         for r in range(1, self.buffer_size + 1):
-            indexes += [self.y+r, self.y-r]
+            indexes += [self.y + r, self.y - r]
         for r in indexes:
-            if 0 <= r < len(grid):
-                row = grid[r]
-                grid[r] = row[:l + ljust] + word + row[l+ljust+len(word):]
+            if 0 <= r < len(diagram.grid):
+                row = diagram.grid[r]
+                left_side = row[:l + _ljust]
+                right_side = row[l + _ljust + len(word):]
+                diagram.grid[r] = left_side + word + right_side
                 word = self.horizontal_buffer * len(word)
+
+
+class Name(RoomName):
+    characters = 'abcdefghijklmnopqrstuvwxyz'
 
 
 class Door(Cell):
