@@ -17,6 +17,11 @@ def main(cli_args=sys.argv[1:]):
 
 
 
+def create_wall_file(grid):
+
+
+
+
 def parse_args(cli_args):
     parser = ArgumentParser(description='The seaborn_glowforge.glowforge will'
                                         ' create the walls for glowforge.')
