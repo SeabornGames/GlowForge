@@ -18,6 +18,9 @@ def main(cli_args=sys.argv[1:]):
             if room.name == highlight:
                 room.highlight(diagram)
 
+    if args.input_file:
+        diagram.update_grid()
+
     if not args.no_header:
         diagram.add_header()
 
@@ -57,6 +60,8 @@ def parse_args(cli_args):
     parser.add_argument('--highlight-room', default=None, nargs='+',
                         help='Highlights a room with this name to test room'
                              ' dimensions for debugging')
+    parser.add_argument('--remove-objects', default=None,
+                        help='Remove objects and boundaries for debugging')
     args = parser.parse_args(cli_args)
     if args.input_file and args.output_file is None:
         args.output_file = args.input_file
@@ -84,7 +89,6 @@ class Diagram:
         self.blank = blank
         if input_file:
             self.grid = self.parse_file(input_file)
-            self.update()
         else:
             self.grid = self.create_grid()
 
@@ -134,15 +138,16 @@ class Diagram:
                     self.name_characters[x, y] = RoomName(c, x, y)
                 elif c in ObjectName.characters:
                     self.name_characters[x, y] = ObjectName(c, x, y)
-        return grid
 
-    def update(self):
-        for v in self.layout.values():
-            v.clean(self)
         for k in list(self.name_characters.keys()):
             v = self.name_characters.get(k)
             if v is not None:  # names are popped out with other names
                 v.clean(self)
+        return grid
+
+    def update_grid(self):
+        for v in self.layout.values():
+            v.clean(self)
         for v in self.layout.values():
             row = list(self.grid[v.y])
             row[v.x] = v.c
@@ -227,9 +232,6 @@ class Cell:
 
 class RoomName(Cell):
     characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789[]_-'
-    horizontal_buffer = ' '
-    vertical_buffer = ' '
-    buffer_size = 2
 
     def combine_characters_to_a_name(self, diagram):
         # This will remove this character and other name characters from
@@ -247,33 +249,9 @@ class RoomName(Cell):
                 break
         return name.strip()
 
-    def add_name_to_grid(self, diagram, name, x, y):
-        i = len(name)
-        l = r = 0
-        for r in range(self.x + i, min(diagram.width * 4, self.x + i + 400)):
-            if diagram.layout.get((r, self.y), None):
-                break
-        for l in range(self.x, max(-1, self.x - 400), -1):
-            if l and diagram.layout.get((l, self.y), None):
-                break
-        name = (self.vertical_buffer * self.buffer_size + name.strip() +
-                self.vertical_buffer * self.buffer_size)
-        _ljust = (r - l - len(name)) // 2 + 1
-        indexes = [self.y]
-        for r in range(1, self.buffer_size + 1):
-            indexes += [self.y + r, self.y - r]
-        for r in indexes:
-            if 0 <= r < len(diagram.grid):
-                row = diagram.grid[r]
-                left_side = row[:l + _ljust]
-                right_side = row[l + _ljust + len(name):]
-                diagram.grid[r] = left_side + name + right_side
-                name = self.horizontal_buffer * len(name)
-
     def clean(self, diagram):
         name = self.combine_characters_to_a_name(diagram)
         diagram.rooms.append(Room(name, self.x, self.y))
-        self.add_name_to_grid(diagram, name, self.x, self.y)
 
 
 class ObjectName(RoomName):
@@ -282,7 +260,6 @@ class ObjectName(RoomName):
     def clean(self, diagram):
         name = self.combine_characters_to_a_name(diagram)
         diagram.objects.append(Object(name, self.x, self.y))
-        self.add_name_to_grid(diagram, name, self.x, self.y)
 
 
 class Door(Cell):
@@ -346,6 +323,10 @@ class Wall(Cell):
 
 
 class Room:
+    horizontal_buffer = ' '
+    vertical_buffer = ' '
+    buffer_size = 2
+
     def __init__(self, name, x, y):
         self.name = name
         self.x = x
@@ -381,6 +362,29 @@ class Room:
             if diagram.grid[y][x] == ' ':
                 row = diagram.grid[y]
                 diagram.grid[y] = row[:x] + color + row[x + 1:]
+
+    def add_name_to_grid(self, diagram):
+        i = len(self.name)
+        l = r = 0
+        for r in range(self.x + i, min(diagram.width * 4, self.x + i + 400)):
+            if diagram.layout.get((r, self.y), None):
+                break
+        for l in range(self.x, max(-1, self.x - 400), -1):
+            if l and diagram.layout.get((l, self.y), None):
+                break
+        name = (self.vertical_buffer * self.buffer_size + self.name.strip() +
+                self.vertical_buffer * self.buffer_size)
+        _ljust = (r - l - len(name)) // 2 + 1
+        indexes = [self.y]
+        for r in range(1, self.buffer_size + 1):
+            indexes += [self.y + r, self.y - r]
+        for r in indexes:
+            if 0 <= r < len(diagram.grid):
+                row = diagram.grid[r]
+                left_side = row[:l + _ljust]
+                right_side = row[l + _ljust + len(name):]
+                diagram.grid[r] = left_side + name + right_side
+                name = self.horizontal_buffer * len(name)
 
 
 class Object(Room):
