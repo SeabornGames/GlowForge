@@ -50,7 +50,7 @@ def parse_args(cli_args):
                              ' file.')
     parser.add_argument('--filter-room', '-r',
                         help='If specified it will only output a given room')
-    parser.add_argument('--exclude-room', args='+',
+    parser.add_argument('--exclude-room', nargs='+',
                         help='If specified will exclude these rooms')
     args = parser.parse_args(cli_args)
     if args.input_file and args.output_file is None:

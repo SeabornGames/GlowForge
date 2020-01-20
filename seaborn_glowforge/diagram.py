@@ -13,7 +13,7 @@ def main(cli_args=sys.argv[1:]):
 
     diagram = Diagram(**vars(args))
 
-    for highlight in args.highlight_room:
+    for highlight in (args.highlight_room or []):
         for room in diagram.rooms + diagram.objects:
             if room.name == highlight:
                 room.highlight(diagram)
@@ -54,7 +54,7 @@ def parse_args(cli_args):
     parser.add_argument('--output-file', '-o', default=None,
                         help='Path to the output file default to the input'
                              ' file.')
-    parser.add_argument('--highlight-room', default=None, args='+',
+    parser.add_argument('--highlight-room', default=None, nargs='+',
                         help='Highlights a room with this name to test room'
                              ' dimensions for debugging')
     args = parser.parse_args(cli_args)
@@ -131,16 +131,16 @@ class Diagram:
                 elif c in Virtual.characters:
                     self.layout[x, y] = Virtual(c, x, y)
                 elif c in RoomName.characters:
-                    self.names[x, y] = RoomName(c, x, y)
+                    self.name_characters[x, y] = RoomName(c, x, y)
                 elif c in ObjectName.characters:
-                    self.names[x, y] = ObjectName(c, x, y)
+                    self.name_characters[x, y] = ObjectName(c, x, y)
         return grid
 
     def update(self):
         for v in self.layout.values():
             v.clean(self)
-        for k in list(self.names.keys()):
-            v = self.names.get(k)
+        for k in list(self.name_characters.keys()):
+            v = self.name_characters.get(k)
             if v is not None:  # names are popped out with other names
                 v.clean(self)
         for v in self.layout.values():
@@ -236,9 +236,9 @@ class RoomName(Cell):
         # diagram.names
         name = ''
         for i in range(100):
-            _next = diagram.names.get((self.x + i, self.y), None)
+            _next = diagram.name_characters.get((self.x + i, self.y), None)
             if isinstance(_next, RoomName):
-                diagram.names.pop((self.x + i, self.y))
+                diagram.name_characters.pop((self.x + i, self.y))
                 name += _next.c
             elif (_next is None and (self.x + i, self.y) not in diagram.layout
                   and name[-1] != ' '):
