@@ -12,6 +12,12 @@ def main(cli_args=sys.argv[1:]):
             copyfile(args.output_file, args.backup_file)
 
     diagram = Diagram(**vars(args))
+
+    for highlight in args.highlight_room:
+        for room in diagram.rooms + diagram.objects:
+            if room.name == highlight:
+                room.highlight(diagram)
+
     if not args.no_header:
         diagram.add_header()
 
@@ -48,6 +54,9 @@ def parse_args(cli_args):
     parser.add_argument('--output-file', '-o', default=None,
                         help='Path to the output file default to the input'
                              ' file.')
+    parser.add_argument('--highlight-room', default=None, args='+',
+                        help='Highlights a room with this name to test room'
+                             ' dimensions for debugging')
     args = parser.parse_args(cli_args)
     if args.input_file and args.output_file is None:
         args.output_file = args.input_file
@@ -65,7 +74,9 @@ class Diagram:
     def __init__(self, width, height, checker, ten_checker, blank, input_file,
                  **kwargs):
         self.layout = OrderedDict()
-        self.names = OrderedDict()
+        self.name_characters = OrderedDict()
+        self.rooms = []
+        self.objects = []
         self.width = width
         self.height = height
         self.checker = checker
@@ -221,6 +232,8 @@ class RoomName(Cell):
     buffer_size = 2
 
     def combine_characters_to_a_name(self, diagram):
+        # This will remove this character and other name characters from
+        # diagram.names
         name = ''
         for i in range(100):
             _next = diagram.names.get((self.x + i, self.y), None)
@@ -234,8 +247,7 @@ class RoomName(Cell):
                 break
         return name.strip()
 
-    def clean(self, diagram):
-        name = self.combine_characters_to_a_name(diagram)
+    def add_name_to_grid(self, diagram, name, x, y):
         i = len(name)
         l = r = 0
         for r in range(self.x + i, min(diagram.width * 4, self.x + i + 400)):
@@ -258,9 +270,19 @@ class RoomName(Cell):
                 diagram.grid[r] = left_side + name + right_side
                 name = self.horizontal_buffer * len(name)
 
+    def clean(self, diagram):
+        name = self.combine_characters_to_a_name(diagram)
+        diagram.rooms.append(Room(name, self.x, self.y))
+        self.add_name_to_grid(diagram, name, self.x, self.y)
+
 
 class ObjectName(RoomName):
     characters = 'abcdefghijklmnopqrstuvwxyz'
+
+    def clean(self, diagram):
+        name = self.combine_characters_to_a_name(diagram)
+        diagram.objects.append(Object(name, self.x, self.y))
+        self.add_name_to_grid(diagram, name, self.x, self.y)
 
 
 class Door(Cell):
@@ -321,6 +343,47 @@ class Wall(Cell):
                   top_intersect + bottom_intersect + vertical +
                   top_left_corner + top_right_corner + bottom_left_corner +
                   bottom_right_corner)
+
+
+class Room:
+    def __init__(self, name, x, y):
+        self.name = name
+        self.x = x
+        self.y = y
+        self.cells = []
+        self.walls = []
+
+    def calc_room_dimensions(self, layout, max_x, max_y):
+        self._add_cell(self, layout, (self.x, self.y), max_x, max_y)
+
+    def _add_cell(self, layout, location, max_x, max_y):
+        cell = layout.get(location)
+        if cell is None:
+            self.cells.append(location)
+        else:
+            self.walls.append(location)
+        for x, y in [(-1,0), (1,0), (0, -1), (0, +1)]:
+            neighbor = (location[0]+x, location[1]+y)
+            if not (0<= neighbor[0] < max_x):
+                continue
+            if not (0 <= neighbor[1] + y < max_y):
+                continue
+            if neighbor in self.cells or neighbor in self.walls:
+                continue
+            self._add_cell(layout, neighbor, max_x, max_y)
+
+    def highlight(self, diagram, color='░'):
+        if not self.cells:
+            self.calc_room_dimensions(diagram.layout, diagram.width*4,
+                                      diagram.height*2)
+
+        for x, y in self.cells:
+            row = diagram.grid[y]
+            diagram.grid[y] = row[:x]+color+row[x+1:]
+
+
+class Object(Room):
+    pass
 
 
 if __name__ == '__main__':

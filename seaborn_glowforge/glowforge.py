@@ -3,7 +3,8 @@ import sys
 from argparse import ArgumentParser
 from shutil import copyfile
 from seaborn_table import SeabornTable
-from seaborn_glowforge.diagram import Cell, Special, Door, Virtual, Window, Wall
+from seaborn_glowforge.diagram import (Cell, RoomName, Name, Door, Virtual,
+                                       Window, Wall, Diagram)
 
 
 def main(cli_args=sys.argv[1:]):
@@ -12,12 +13,9 @@ def main(cli_args=sys.argv[1:]):
         if os.path.exists(args.output_file):
             copyfile(args.output_file, args.backup_file)
 
-    if args.input_file and os.path.exists(args.input_file):
-        args = Cell.parse_file(args)
+    diagram = Diagram(**vars(args))
 
 
-
-def create_wall_file(grid):
 
 
 
