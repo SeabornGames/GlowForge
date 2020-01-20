@@ -354,32 +354,33 @@ class Room:
         self.walls = []
 
     def calc_room_dimensions(self, layout, max_x, max_y):
-        self._add_cell(self, layout, (self.x, self.y), max_x, max_y)
-
-    def _add_cell(self, layout, location, max_x, max_y):
-        cell = layout.get(location)
-        if cell is None:
-            self.cells.append(location)
-        else:
-            self.walls.append(location)
-        for x, y in [(-1,0), (1,0), (0, -1), (0, +1)]:
-            neighbor = (location[0]+x, location[1]+y)
-            if not (0<= neighbor[0] < max_x):
-                continue
-            if not (0 <= neighbor[1] + y < max_y):
-                continue
-            if neighbor in self.cells or neighbor in self.walls:
-                continue
-            self._add_cell(layout, neighbor, max_x, max_y)
+        self.cells.append((self.x, self.y))
+        i = 0
+        while i < len(self.cells):
+            x, y = self.cells[i]
+            for neighbor in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)]:
+                if not (0 <= neighbor[0] < max_x):
+                    continue
+                if not (0 <= neighbor[1] + y < max_y):
+                    continue
+                if neighbor in self.cells or neighbor in self.walls:
+                    continue
+                cell = layout.get(neighbor)
+                if cell is None:
+                    self.cells.append(neighbor)
+                else:
+                    self.walls.append(neighbor)
+            i += 1
 
     def highlight(self, diagram, color='░'):
         if not self.cells:
-            self.calc_room_dimensions(diagram.layout, diagram.width*4,
-                                      diagram.height*2)
+            self.calc_room_dimensions(diagram.layout, diagram.width * 4,
+                                      diagram.height * 2)
 
         for x, y in self.cells:
-            row = diagram.grid[y]
-            diagram.grid[y] = row[:x]+color+row[x+1:]
+            if diagram.grid[y][x] == ' ':
+                row = diagram.grid[y]
+                diagram.grid[y] = row[:x] + color + row[x + 1:]
 
 
 class Object(Room):
