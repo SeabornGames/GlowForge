@@ -254,7 +254,7 @@ class Virtual(Cell):
     left_intersect = '╟'
     right_intersect = '╢'
     top_intersect = '╤'
-    bottom_intersect = '⟂'
+    bottom_intersect = '╧'
     vertical = '┆'
     top_right_corner = '┐'
     top_left_corner = '┌'
