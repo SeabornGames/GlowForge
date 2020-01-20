@@ -13,13 +13,13 @@ def main(cli_args=sys.argv[1:]):
 
     diagram = Diagram(**vars(args))
 
-    for highlight in (args.highlight_room or []):
-        for room in diagram.rooms + diagram.objects:
-            if room.name == highlight:
-                room.highlight(diagram)
-
     if args.input_file:
-        diagram.update_grid()
+        for highlight in (args.highlight_room or []):
+            for room in diagram.rooms + diagram.objects:
+                if room.name == highlight:
+                    room.highlight(diagram)
+        diagram.add_names_to_grid()
+        diagram.add_layout_to_grid()
 
     if not args.no_header:
         diagram.add_header()
@@ -79,6 +79,7 @@ class Diagram:
     def __init__(self, width, height, checker, ten_checker, blank, input_file,
                  **kwargs):
         self.layout = OrderedDict()
+        self.room_layout = None
         self.name_characters = OrderedDict()
         self.rooms = []
         self.objects = []
@@ -139,19 +140,24 @@ class Diagram:
                 elif c in ObjectName.characters:
                     self.name_characters[x, y] = ObjectName(c, x, y)
 
-        for k in list(self.name_characters.keys()):
-            v = self.name_characters.get(k)
-            if v is not None:  # names are popped out with other names
-                v.clean(self)
-        return grid
-
-    def update_grid(self):
         for v in self.layout.values():
             v.clean(self)
+        for k in list(self.name_characters.keys()):
+            v = self.name_characters.get(k)
+            if v is not None:  # character was popped out with other names
+                v.clean(self)
+        return self.create_grid()
+
+    def add_names_to_grid(self):
+        for room in self.rooms:
+            room.add_name_to_grid(diagram=self)
+        for object in self.objects:
+            object.add_name_to_grid(diagram=self)
+
+    def add_layout_to_grid(self):
         for v in self.layout.values():
-            row = list(self.grid[v.y])
-            row[v.x] = v.c
-            self.grid[v.y] = ''.join(row)
+            row = self.grid[v.y]
+            self.grid[v.y] = row[:v.x] + v.c + row[v.x+1:]
 
     def add_header(self):
         header = [' ' * 5] * 3
@@ -377,7 +383,10 @@ class Room:
         _ljust = (r - l - len(name)) // 2 + 1
         indexes = [self.y]
         for r in range(1, self.buffer_size + 1):
-            indexes += [self.y + r, self.y - r]
+            if (self.x, self.y+r) in self.cells:
+                indexes.append(self.y + r)
+            if (self.x, self.y-r) in self.cells:
+                indexes.append(self.y -r)
         for r in indexes:
             if 0 <= r < len(diagram.grid):
                 row = diagram.grid[r]
