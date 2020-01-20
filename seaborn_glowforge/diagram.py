@@ -225,7 +225,7 @@ class Special(Cell):
                 break
         word = (self.verticle_buffer * self.buffer_size + word.strip() +
                 self.verticle_buffer * self.buffer_size)
-        ljust = (r - l - len(word)) // 2
+        ljust = (r - l - len(word)) // 2 + 1
         indexes = [self.y]
         for r in range(1, self.buffer_size + 1):
             indexes += [self.y+r, self.y-r]
