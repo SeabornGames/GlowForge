@@ -91,22 +91,21 @@ class Diagram:
         self.ten_checker = ten_checker
         self.blank = blank
         if input_file:
-            self.grid = self.parse_file(input_file)
-        else:
-            self.grid = self.create_grid()
+            self.parse_file(input_file)
+        self.grid = self.create_grid(blank, checker, ten_checker)
 
-    def create_grid(self):
+    def create_grid(self, blank=" ", checker=" ", ten_checker=" "):
         grid = []
         odd = even = ''
         for w in range(self.width):
-            odd += (self.blank * 4) if w % 2 else (self.checker * 4)
+            odd += (self.blank * 4) if w % 2 else (checker * 4)
             if w % 10 == 9:
-                even += self.ten_checker * 4
+                even += ten_checker * 4
             else:
-                even += (self.checker * 4) if w % 2 else (self.blank * 4)
+                even += (checker * 4) if w % 2 else (blank * 4)
         for i in range(self.height):
             if i % 10 == 9:
-                grid += [odd.replace(self.checker, self.ten_checker)] * 2
+                grid += [odd.replace(checker, ten_checker)] * 2
             else:
                 grid += [odd, odd] if i % 2 else [even, even]
         return grid
@@ -148,7 +147,6 @@ class Diagram:
             v = self.name_characters.get(k)
             if v is not None:  # character was popped out with other names
                 v.clean(diagram=self)
-        return self.create_grid()
 
     def remove_objects(self):
         self.layout = self.create_room_only_layout()
