@@ -23,6 +23,7 @@ windows, and doors will be made with -.  It is assuming each character is 4" by
 4".
 
 https://www.fileformat.info/info/charset/UTF-8/list.htm?start=8192
+https://cloford.com/resources/charcodes/utf-8_box-drawing.htm
 ຘℿᄑᄏᄐᄓᆩ፧፨።፠ᐧᐩⅢᐱᐳᐯᐸ←↑→↓↖↗↘↙⇐⏎
 ⏹⏸⏺⏩⏪⏫⏬⏭⏮⏯
 █ ▓  ▒      ░   ▢   ▦       ▧   ⿴ ▬
@@ -43,6 +44,9 @@ Right
 Bottom
     ╚ ╘ ╙  ═   ╧  ╩  ╛  ╝  ╜
 
+┃ ━ ┏ ┓ ┗ ┛ ┣ ┫ ┳ ┻ ╋ ┇ ┉
+
+꒿꒾ⅼ
 
 Creating a Diagram File
 -----------------------

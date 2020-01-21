@@ -291,13 +291,13 @@ class ObjectName(RoomName):
 
 
 class Door(Cell):
-    horizontal = '█'
+    horizontal = '▤'
     internal = '█'
     left_intersect = '█'
     right_intersect = '█'
     top_intersect = '█'
     bottom_intersect = '█'
-    vertical = '█'
+    vertical = '╫'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical + vertical)
 
@@ -344,6 +344,24 @@ class Wall(Cell):
     left_intersect = '╠'
     vertical = '║'
     right_intersect = '╣'
+    characters = (horizontal + internal + left_intersect + right_intersect +
+                  top_intersect + bottom_intersect + vertical +
+                  top_left_corner + top_right_corner + bottom_left_corner +
+                  bottom_right_corner)
+
+
+class Object(Cell):
+    horizontal = '━'
+    internal = '╋'
+    top_left_corner = '┏'
+    top_intersect = '┳'
+    top_right_corner = '┓'
+    bottom_left_corner = '┗'
+    bottom_intersect = '┻'
+    bottom_right_corner = '┛'
+    left_intersect = '┣'
+    vertical = '┃'
+    right_intersect = '┫'
     characters = (horizontal + internal + left_intersect + right_intersect +
                   top_intersect + bottom_intersect + vertical +
                   top_left_corner + top_right_corner + bottom_left_corner +
