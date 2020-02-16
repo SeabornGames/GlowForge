@@ -55,18 +55,24 @@ Use the ``diagram`` command to create a blank diagram file, or to clean up
 an existing diagram.
 
 
-Creating Glowforge Walls
-------------------------
+Creating Wall File
+------------------
+
+Use the ``glowforge`` command with the --input-file <diagram.txt> option to
+update the wall file from the walls within the diagram file.
+
+This --wall-file is a table form of csv or md, and is a necessary intermediate
+in case there are certain walls that need to be a non-default height.
+
+
+Creating Glowforge Wall File
+----------------------------
+
+Use the ``glowforge`` command with the --output-file to create a file of the
+walls for glowforge to create from the --wall-file.
+
 
 The following two files are needed to create the walls for glowforge:
     1. diagram file from above
     2. wall file.
-
-The wall file is a csv table (or any file format that seaborn_table can read.
-If the wall file is not provided then the glowforge program will create it based
-on the room names in the diagram file.
-
-
-
-
 
