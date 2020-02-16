@@ -21,7 +21,8 @@ def main(cli_args=sys.argv[1:]):
             for room in diagram.rooms + diagram.objects:
                 if room.name == highlight:
                     room.highlight(diagram)
-        diagram.add_names_to_grid()
+        if not args.remove_names:
+            diagram.add_names_to_grid()
         diagram.add_layout_to_grid()
 
     if not args.no_header:
@@ -65,6 +66,8 @@ def parse_args(cli_args):
                              ' dimensions for debugging')
     parser.add_argument('--remove-objects', default=None, action='store_true',
                         help='Remove objects and boundaries for debugging')
+    parser.add_argument('--remove-names', default=None, action='store_true',
+                        help='Remove names from rooms')
     args = parser.parse_args(cli_args)
     if args.input_file and args.output_file is None:
         args.output_file = args.input_file

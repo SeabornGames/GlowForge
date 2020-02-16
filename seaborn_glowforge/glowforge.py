@@ -16,8 +16,8 @@ def main(cli_args=sys.argv[1:]):
     diagram = Diagram(**vars(args))
     diagram.remove_objects()
 
-    glowforge = Glowforge(diagram, args.default_height)
-    glowforge.update_heights_from_file(args.wall_file)
+    glowforge = Glowforge(diagram, args.default_height, args.floor)
+    glowforge.update_wall_file(args.wall_file)
     glowforge.save(args.wall_file)
 
 
@@ -28,6 +28,9 @@ def parse_args(cli_args):
                         help='table file from seaborn_table defining the wall'
                              ' dimensions, which will be created if it does not'
                              ' exist. Defaults to the input file plus wall.md')
+    parser.add_argument('--floor', default='1',
+                        help='Used to specify the floor within the'
+                             ' wall-file')
     parser.add_argument('--wall-height', type=float, default=10.0,
                         help='default height of the walls when creating the'
                              ' wall file.')
@@ -60,9 +63,10 @@ def parse_args(cli_args):
 
 
 class Glowforge:
-    def __init__(self, diagram, default_height):
+    def __init__(self, diagram, default_height, floor):
         self.diagram = diagram
         self.default_height = default_height
+        self.floor = floor
         diagram.grid = diagram.create_grid()
         diagram.add_layout_to_grid()
         grid = '\n'.join(diagram.grid)
@@ -75,6 +79,7 @@ class Glowforge:
         walls = []
         grid = grid.split('\n')
         for y in range(len(grid)):
+            print('row: %s'%grid[y])
             symbols = ''
             for x in range(len(grid[y])):
                 cell = grid[y][x]
@@ -92,6 +97,7 @@ class Glowforge:
                             x - len(symbols), x, y, y + 1)
                         for i, room in enumerate(rooms):
                             wall[f'room_{i}'] = room
+                        print('symbols: %s'%symbols)
                         walls.append(wall)
                     symbols = ''
         return walls
@@ -131,20 +137,38 @@ class Glowforge:
                     if (x, y) in room.walls:
                         return True
             return False
-
         return [room for room in self.diagram.rooms if room_found(room)]
 
-    def update_heights_from_file(self, file):
+    def update_wall_file(self, file):
         if not os.path.exists(file):
             return
-        table = SeabornTable.file_to_obj(file)
-        for wall in self.horizontal + self.vertical:
+        table = SeabornTable.file_to_obj(
+            file, columns=['floor', 'horizontal', 'status', 'height1',
+                           'height2', 'room_0', 'room_1', 'room_2', 'room_3',
+                           'x', 'y', 'symbols'])
+        for row in table:
+            if row['floor'] == self.floor:
+                row['status'] = 'missing'
+
+        def update_wall_from_table(wall):
             for row in table:
                 if (wall['horizontal'] == row['horizontal'] and
-                        wall['room_0'] == row['room_0']):
+                            wall['room_0'] == row['room_0']):
                     wall['height1'] = row['height1']
                     wall['height2'] = row['height2']
-                    row['room_0'] = 'used'
+                    row['status'] = 'used'
+                    return True
+            return False
+
+        for wall in self.horizontal + self.vertical:
+            if not update_wall_from_table(wall):
+                table.append(dict(
+                    height1=self.default_height,
+                    height2=self.default_height,
+                    floor=self.floor,
+                    status='new',
+                    **wall))
+        table.save()
 
     def save(self, file):
         SeabornTable.list_to_obj(self.horizontal+self.vertical
