@@ -82,8 +82,8 @@ def parse_args(cli_args):
 
 
 class Diagram:
-    def __init__(self, width, height, checker, ten_checker, blank, input_file,
-                 **kwargs):
+    def __init__(self, checker, ten_checker, blank, input_file,
+                 width=None, height=None, **kwargs):
         self.layout = OrderedDict()
         self.name_characters = OrderedDict()
         self.rooms = []
