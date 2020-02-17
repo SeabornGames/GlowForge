@@ -1,3 +1,4 @@
+import os
 import sys
 from argparse import ArgumentParser
 from seaborn_table import SeabornTable
@@ -7,7 +8,7 @@ from seaborn_glowforge.diagram import (Cell, RoomName, ObjectName, Door,
 
 def main(cli_args=sys.argv[1:]):
     args = parse_args(cli_args)
-    glowforge = Glowforge(args.wall_file, args.floor)
+    glowforge = Glowforge(wall_file=args.wall_file, floor=args.floor)
 
     if args.input_file:
         diagram = Diagram(**vars(args))
@@ -67,11 +68,14 @@ class Glowforge:
                          'height2', 'room_0', 'room_1', 'room_2', 'room_3',
                          'x', 'y', 'symbols']
 
-    def __init__(self, floor, wall_file):
+    def __init__(self, wall_file, floor):
         self.floor = floor
         self.wall_file = wall_file
-        self.wall_table = SeabornTable(wall_file,
-                                       columns=self.WALL_FILE_COLUMNS)
+        if os.path.exists(wall_file):
+            self.wall_table = SeabornTable.file_to_obj(
+                wall_file, columns=self.WALL_FILE_COLUMNS)
+        else:
+            self.wall_table = SeabornTable(columns=self.WALL_FILE_COLUMNS)
 
     def extract_horizontal_walls(self, grid, rooms):
         for v in [Wall.vertical, Window.vertical] + list(Virtual.characters):
@@ -148,9 +152,9 @@ class Glowforge:
 
         def update_wall(wall):
             for row in self.wall_table:
-                if (wall['horizontal'] == row['horizontal'] and
-                            wall['room_0'] == row['room_0']):
-                    row.update(**wall)
+                if (wall['horizontal'] == row.get('horizontal') and
+                        wall.get('room_0') == row.get('room_0')):
+                    row.update(wall)
                     row['status'] = 'used'
                     return True
             return False
@@ -163,7 +167,8 @@ class Glowforge:
                     floor=self.floor,
                     status='new',
                     **wall))
-        self.wall_table.obj_to_file(self.wall_file)
+        self.wall_table.obj_to_file(self.wall_file, align='left',
+                                    quote_numbers=False)
 
     def save_glowforge_file(self, filename):
         raise NotImplemented()
