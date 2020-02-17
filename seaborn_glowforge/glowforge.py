@@ -2,8 +2,8 @@ import os
 import sys
 from argparse import ArgumentParser
 from seaborn_table import SeabornTable
-from seaborn_glowforge.diagram import (Cell, RoomName, ObjectName, Door,
-                                       Virtual, Window, Wall, Diagram)
+from seaborn_glowforge.diagram import (Cell, RoomName, ObjectName, DoorCell,
+                                       VirtualCell, WindowCell, WallCell, Diagram)
 
 
 def main(cli_args=sys.argv[1:]):
@@ -116,7 +116,7 @@ class Glowforge:
                                     quote_numbers=False)
 
     def extract_horizontal_walls(self, grid, rooms):
-        for v in [Wall.vertical, Window.vertical] + list(Virtual.characters):
+        for v in [WallCell.vertical, WindowCell.vertical] + list(VirtualCell.characters):
             grid = grid.replace(v, ' ')
         walls = []
         grid = grid.split('\n')
@@ -146,8 +146,8 @@ class Glowforge:
         return walls
 
     def extract_vertical_walls(self, grid, rooms):
-        for h in [Wall.horizontal,
-                  Window.horizontal] + list(Virtual.characters):
+        for h in [WallCell.horizontal,
+                  WindowCell.horizontal] + list(VirtualCell.characters):
             grid = grid.replace(h, ' ')
 
         walls = []

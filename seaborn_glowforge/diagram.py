@@ -25,8 +25,8 @@ def main(cli_args=sys.argv[1:]):
             diagram.add_names_to_grid()
         diagram.add_layout_to_grid()
 
-    if not args.no_header:
-        diagram.add_header()
+    if args.ruler:
+        diagram.add_ruler()
 
     if args.output_file and args.output_file != '-':
         with open(args.output_file, 'w') as fn:
@@ -49,8 +49,9 @@ def parse_args(cli_args):
                         help='character of the oscillating foot spaces')
     parser.add_argument('--ten-checker', default='▒',
                         help='character of the oscillating 10 foot spaces')
-    parser.add_argument('--no-header', action='store_true', default=False,
-                        help='skip putting the header in the file')
+    parser.add_argument('--ruler',
+                        action='store_true', default=False,
+                        help='puts a header of a ruler values in the file')
     parser.add_argument('--backup-file', '-b', default=None,
                         help='Path to save the old file to back it up, defaults'
                              ' to the <basename>.bck.')
@@ -75,9 +76,9 @@ def parse_args(cli_args):
         args.backup_file = f"{args.output_file.rsplit('.', 1)[0]}.bck"
     if args.input_file is None:
         if args.height is None:
-            args.height = 100
+            args.height = 400
         if args.width is None:
-            args.width = 100
+            args.width = 200
     return args
 
 
@@ -131,14 +132,14 @@ class Diagram:
             for x, c in enumerate(row):
                 if c in [self.blank, self.checker, self.ten_checker]:
                     pass
-                elif c in Door.characters:
-                    self.layout[x, y] = Door(c, x, y)
-                elif c in Virtual.characters:
-                    self.layout[x, y] = Virtual(c, x, y)
-                elif c in Window.characters:
-                    self.layout[x, y] = Window(c, x, y)
-                elif c in Wall.characters:
-                    self.layout[x, y] = Wall(c, x, y)
+                elif c in DoorCell.characters:
+                    self.layout[x, y] = DoorCell(c, x, y)
+                elif c in VirtualCell.characters:
+                    self.layout[x, y] = VirtualCell(c, x, y)
+                elif c in WindowCell.characters:
+                    self.layout[x, y] = WindowCell(c, x, y)
+                elif c in WallCell.characters:
+                    self.layout[x, y] = WallCell(c, x, y)
                 elif c in RoomName.characters:
                     self.name_characters[x, y] = RoomName(c, x, y)
                 elif c in ObjectName.characters:
@@ -166,7 +167,7 @@ class Diagram:
                                             self.height * 2)
             for location in object.walls:
                 wall = self.layout.get(location)
-                if isinstance(wall, Virtual) and wall not in removed_walls:
+                if isinstance(wall, VirtualCell) and wall not in removed_walls:
                     removed_walls.append(wall)
         for k, v in self.layout.items():
             if v not in removed_walls:
@@ -184,7 +185,7 @@ class Diagram:
             row = self.grid[v.y]
             self.grid[v.y] = row[:v.x] + v.c + row[v.x + 1:]
 
-    def add_header(self):
+    def add_ruler(self):
         header = [' ' * 5] * 3
         for w in range(self.width):
             header[0] += str(w // 10)[-1] + str(w // 10)[-1] + str(w // 10)[
@@ -293,7 +294,7 @@ class ObjectName(RoomName):
         diagram.objects.append(Object(name, self.x, self.y))
 
 
-class Door(Cell):
+class DoorCell(Cell):
     horizontal = '▤'
     internal = '█'
     left_intersect = '█'
@@ -305,7 +306,7 @@ class Door(Cell):
                   top_intersect + bottom_intersect + vertical + vertical)
 
 
-class Virtual(Cell):
+class VirtualCell(Cell):
     horizontal = '┈'
     internal = '⟊'
     left_intersect = '╟'
@@ -323,7 +324,7 @@ class Virtual(Cell):
                   bottom_right_corner)
 
 
-class Window(Cell):
+class WindowCell(Cell):
     horizontal = '─'
     internal = '┼'
     left_intersect = '╟'
@@ -335,7 +336,7 @@ class Window(Cell):
                   top_intersect + bottom_intersect + vertical)
 
 
-class Wall(Cell):
+class WallCell(Cell):
     horizontal = '═'
     internal = '╬'
     top_left_corner = '╔'
@@ -353,7 +354,7 @@ class Wall(Cell):
                   bottom_right_corner)
 
 
-class Object(Cell):
+class ObjectCell(Cell):
     horizontal = '━'
     internal = '╋'
     top_left_corner = '┏'
