@@ -383,6 +383,12 @@ class Room:
         self.cells = []
         self.walls = []
 
+    def __repr__(self):
+        return 'Room<%s, %s, %s>'%(self.name, self.x, self.y)
+
+    def __str__(self):
+        return self.name
+
     def calc_room_dimensions(self, layout, max_x, max_y):
         self.cells = []
         self.walls = []
@@ -390,8 +396,8 @@ class Room:
         i = 0
         while i < len(self.cells):
             x, y = self.cells[i]
-            for neighbor in [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1),
-                             (x - 1, y-1),(x+1, y+1), (x+1, y-1), (x-1, y+1)]:
+            for neighbor in [(x-1, y), (x+1, y), (x, y-1), (x, y + 1),
+                             (x-1, y-1),(x+1, y+1), (x+1, y-1), (x-1, y+1)]:
                 if not (0 <= neighbor[0] < max_x):
                     continue
                 if not (0 <= neighbor[1] + y < max_y):
@@ -409,6 +415,7 @@ class Room:
         if not self.cells:
             self.calc_room_dimensions(diagram.layout, diagram.width * 4,
                                       diagram.height * 2)
+            print("cells: %s   walls: %s"%(len(self.cells), len(self.walls)))
 
         for x, y in self.cells:
             if diagram.grid[y][x] == ' ':

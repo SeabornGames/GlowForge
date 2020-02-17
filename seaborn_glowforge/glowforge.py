@@ -77,6 +77,44 @@ class Glowforge:
         else:
             self.wall_table = SeabornTable(columns=self.WALL_FILE_COLUMNS)
 
+    def update_wall_file(self, default_wall_height, diagram):
+        diagram.grid = diagram.create_grid()
+        diagram.add_layout_to_grid()
+        grid = '\n'.join(diagram.grid)
+        for room in diagram.rooms:
+            room.calc_room_dimensions(diagram.layout, diagram.width*4,
+                                      diagram.height*2)
+        horizontal = self.extract_horizontal_walls(grid, diagram.rooms)
+        vertical = self.extract_vertical_walls(grid, diagram.rooms)
+
+        for row in self.wall_table:
+            if row['floor'] == self.floor:
+                row['status'] = 'missing'
+
+        def update_wall(wall):
+            for row in self.wall_table:
+                if (row['status'] == 'missing' and
+                        wall['horizontal'] == row.get('horizontal') and
+                        wall.get('room_0') == row.get('room_0') and
+                        wall.get('room_1') == row.get('room_1') and
+                        wall.get('room_2') == row.get('room_2') and
+                        wall.get('room_3') == row.get('room_3')):
+                    row.update(wall)
+                    row['status'] = 'used'
+                    return True
+            return False
+
+        for wall in horizontal + vertical:
+            if not update_wall(wall):
+                self.wall_table.append(dict(
+                    height1=default_wall_height,
+                    height2=default_wall_height,
+                    floor=self.floor,
+                    status='new',
+                    **wall))
+        self.wall_table.obj_to_file(self.wall_file, align='left',
+                                    quote_numbers=False)
+
     def extract_horizontal_walls(self, grid, rooms):
         for v in [Wall.vertical, Window.vertical] + list(Virtual.characters):
             grid = grid.replace(v, ' ')
@@ -94,9 +132,14 @@ class Glowforge:
                                     y=y,
                                     symbols=symbols,
                                     horizontal=True)
-                        rooms = self.extract_rooms(
+                        wall_rooms = self.extract_rooms(
                             x - len(symbols), x, y, y + 1, rooms)
-                        for i, room in enumerate(rooms):
+                        if not wall_rooms:
+                            print("WARNING: failed to find room for horizontal"
+                                  " wall from x: %s to %s and y: %s"%
+                                  (x - len(symbols), x, y))
+                            sys.exit(1)
+                        for i, room in enumerate(wall_rooms):
                             wall[f'room_{i}'] = room
                         walls.append(wall)
                     symbols = ''
@@ -121,9 +164,9 @@ class Glowforge:
                                     y=y - len(symbols),
                                     symbols=symbols.strip(),
                                     horizontal=False)
-                        rooms = self.extract_rooms(
+                        wall_rooms = self.extract_rooms(
                             x, x+1, y-len(symbols), y, rooms)
-                        for i, room in enumerate(rooms):
+                        for i, room in enumerate(wall_rooms):
                             wall[f'room_{i}'] = room
                         walls.append(wall)
                     symbols = ''
@@ -132,43 +175,14 @@ class Glowforge:
     @staticmethod
     def extract_rooms(x_start, x_end, y_start, y_end, rooms):
         def room_found(room):
+            if not room.walls:
+                return False
             for x in range(x_start, x_end):
                 for y in range(y_start, y_end):
                     if (x, y) in room.walls:
                         return True
             return False
         return [room for room in rooms if room_found(room)]
-
-    def update_wall_file(self, default_wall_height, diagram):
-        diagram.grid = diagram.create_grid()
-        diagram.add_layout_to_grid()
-        grid = '\n'.join(diagram.grid)
-        horizontal = self.extract_horizontal_walls(grid, diagram.rooms)
-        vertical = self.extract_vertical_walls(grid, diagram.rooms)
-
-        for row in self.wall_table:
-            if row['floor'] == self.floor:
-                row['status'] = 'missing'
-
-        def update_wall(wall):
-            for row in self.wall_table:
-                if (wall['horizontal'] == row.get('horizontal') and
-                        wall.get('room_0') == row.get('room_0')):
-                    row.update(wall)
-                    row['status'] = 'used'
-                    return True
-            return False
-
-        for wall in horizontal + vertical:
-            if not update_wall(wall):
-                self.wall_table.append(dict(
-                    height1=default_wall_height,
-                    height2=default_wall_height,
-                    floor=self.floor,
-                    status='new',
-                    **wall))
-        self.wall_table.obj_to_file(self.wall_file, align='left',
-                                    quote_numbers=False)
 
     def save_glowforge_file(self, filename):
         raise NotImplemented()
