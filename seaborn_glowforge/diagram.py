@@ -395,6 +395,7 @@ class Room:
         self.walls = []
         self.cells.append((self.x, self.y))
         i = 0
+        done = set()
         while i < len(self.cells):
             x, y = self.cells[i]
             for neighbor in [(x-1, y), (x+1, y), (x, y-1), (x, y + 1),
@@ -403,8 +404,9 @@ class Room:
                     continue
                 if not (0 <= neighbor[1] < max_y):
                     continue
-                if neighbor in self.cells or neighbor in self.walls:
+                if neighbor in done:
                     continue
+                done.add(neighbor)
                 cell = layout.get(neighbor)
                 if cell is None:
                     self.cells.append(neighbor)
