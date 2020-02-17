@@ -401,7 +401,7 @@ class Room:
                              (x-1, y-1),(x+1, y+1), (x+1, y-1), (x-1, y+1)]:
                 if not (0 <= neighbor[0] < max_x):
                     continue
-                if not (0 <= neighbor[1] + y < max_y):
+                if not (0 <= neighbor[1] < max_y):
                     continue
                 if neighbor in self.cells or neighbor in self.walls:
                     continue
@@ -416,7 +416,6 @@ class Room:
         if not self.cells:
             self.calc_room_dimensions(diagram.layout, diagram.width * 4,
                                       diagram.height * 2)
-            print("cells: %s   walls: %s"%(len(self.cells), len(self.walls)))
 
         for x, y in self.cells:
             if diagram.grid[y][x] == ' ':
